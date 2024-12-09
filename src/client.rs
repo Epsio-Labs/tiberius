@@ -299,6 +299,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin + Send> Client<S> {
     pub async fn bulk_insert<'a>(
         &'a mut self,
         table: &'a str,
+        use_table_lock: bool,
     ) -> crate::Result<BulkLoadRequest<'a, S>> {
         // Start the bulk request
         self.connection.flush_stream().await?;
@@ -334,7 +335,11 @@ impl<S: AsyncRead + AsyncWrite + Unpin + Send> Client<S> {
 
         self.connection.flush_stream().await?;
         let col_data = columns.iter().map(|c| format!("{}", c)).join(", ");
-        let query = format!("INSERT BULK {} ({})", table, col_data);
+        let query = if use_table_lock {
+            format!("INSERT BULK {} ({}) WITH (TABLOCK)", table, col_data)
+        } else {
+            format!("INSERT BULK {} ({})", table, col_data)
+        };
 
         let req = BatchRequest::new(query, self.connection.context().transaction_descriptor());
         let id = self.connection.context_mut().next_packet_id();
