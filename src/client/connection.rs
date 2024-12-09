@@ -470,7 +470,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin + Send> Connection<S> {
             })
         } else {
             event!(
-                Level::WARN,
+                Level::DEBUG,
                 "TLS encryption is not enabled. All traffic including the login credentials are not encrypted."
             );
 
